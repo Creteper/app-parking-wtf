@@ -12,7 +12,7 @@ export function MapComponent() {
       scrollWheelZoom={false}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; 智慧社区地图 ©2026'
         url="http://localhost:3000/tiles/{z}/{x}/{y}"
       />
       <Marker position={[116.40742, 39.90421]}>

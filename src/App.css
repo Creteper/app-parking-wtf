@@ -128,3 +128,11 @@
     @apply font-sans;
     }
 }
+/* 修改Leaflet.js 中右下角版权信息标注 */
+.leaflet-control-attribution a {
+  display: none !important;
+}
+
+.leaflet-control-attribution span[aria-hidden="true"] {
+  display: none !important;
+}
