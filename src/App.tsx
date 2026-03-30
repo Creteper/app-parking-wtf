@@ -30,8 +30,11 @@ function App() {
           </Button>
         </div>
       </header>
-      <div data-slot="map-container" className="w-full h-64 rounded-lg overflow-hidden mt-6">
-        <MapComponent />
+      <div
+        data-slot="map-container"
+        className="w-full h-64 rounded-xl overflow-hidden mt-6 shadow-sm border-white border-4"
+      >
+        <MapComponent isTiles />
       </div>
     </main>
   );
