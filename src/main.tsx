@@ -5,6 +5,8 @@ import { RouterProvider } from "react-router/dom";
 import './App.css'
 import App from './App.tsx'
 import ParkingForm from './pages/ParkingForm.tsx';
+import Auth from './pages/Auth.tsx';
+import BindVehiclePlate from './pages/BindVehiclePlate.tsx';
 
 const router = createBrowserRouter([
   {
@@ -12,8 +14,16 @@ const router = createBrowserRouter([
     element: <App/>,
   },
   {
-    path:"/parkingForm",
-    element:<ParkingForm/>
+    path: "/auth",
+    element: <Auth/>,
+  },
+  {
+    path: "/bind-vehicle",
+    element: <BindVehiclePlate/>,
+  },
+  {
+    path: "/parkingForm",
+    element: <ParkingForm/>
   }
 ]);
 
