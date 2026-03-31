@@ -130,18 +130,18 @@ function App() {
         data-slot="map-container"
         className="w-full h-64 rounded-xl overflow-hidden mt-6 shadow-sm border-white border-4"
       >
-        <MapComponent isTiles parkingLots={parkingLots} />
+        <MapComponent isTiles parkingLots={parkingLots} showUserLocation />
       </div>
       <div data-slot="card" className="w-full mt-3 grid grid-cols-2 gap-2">
         <div className="bg-white rounded-xl p-2 flex flex-col gap-2">
           <div className="flex flex-col gap-1">
-            <h1 className="text-md font-bold">
-              别克君威 28T{" "}
+            <h1 className="text-md font-bold">别克君威 28T</h1>
+            <p className="text-xs text-muted-foreground">
+              2025款{" "}
               <span className="bg-linear-to-br from-blue-500 to-blue-600 p-1 rounded-md text-white text-xs">
                 白色
               </span>
-            </h1>
-            <p className="text-xs text-muted-foreground">2025款</p>
+            </p>
           </div>
           <img src="./images/car-photo.png" alt="" />
         </div>
@@ -153,13 +153,15 @@ function App() {
             </p>
           </div>
           <div className="flex justify-center mt-1">
-            <div className="bg-linear-to-br from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg text-xl font-bold tracking-wider border-2 border-white shadow-lg">
+            <div className="bg-linear-to-br from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg text-md font-bold tracking-wider border-2 border-white shadow-lg">
               黑C17813
             </div>
           </div>
         </div>
       </div>
-      <Button className="mt-3 w-full bg-linear-to-br from-primary to-accent rounded-xl" size={"lg"}>停车预约</Button>
+      <Button className="mt-3 w-full bg-linear-to-br from-primary to-accent rounded-xl h-12">
+        停车预约
+      </Button>
     </main>
   );
 }

@@ -1,8 +1,10 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useEffect, useState } from "react";
 import { TILES_BASE_URL } from "@/lib/env";
 import type { ParkingLot } from "@/lib/api";
+import { createUserLocationIcon } from "./UserLocationIcon";
 
 const locationIcon = L.icon({
   iconUrl: "/location/location.svg",
@@ -27,21 +29,59 @@ function CustomMarker({ lot }: { lot: ParkingLot }) {
   );
 }
 
+// 用户位置标记组件
+function UserLocationMarker({ position }: { position: [number, number] }) {
+  const userIcon = createUserLocationIcon();
+
+  return (
+    <Marker position={position} icon={userIcon}>
+      <Popup>您的当前位置</Popup>
+    </Marker>
+  );
+}
+
 export interface MapComponentProps {
   isTiles?: boolean;
   doubleClickZoom?: boolean;
   parkingLots?: ParkingLot[];
+  showUserLocation?: boolean; // 是否显示用户位置
 }
 
 export function MapComponent(
   props: MapComponentProps = { isTiles: true, doubleClickZoom: true },
 ) {
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  // 获取用户位置
+  useEffect(() => {
+    if (!props.showUserLocation) return;
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+        },
+        (error) => {
+          console.error("获取用户位置失败:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    } else {
+      console.error("浏览器不支持地理位置API");
+    }
+  }, [props.showUserLocation]);
+
   return (
     <MapContainer
       className="w-full h-full"
       center={[45.80357801199185, 126.53491329689206]}
       zoom={13}
-      // 隐藏 Leaflet 默认的“层级(缩放) +/- 控件”
+      // 隐藏 Leaflet 默认的"层级(缩放) +/- 控件"
       zoomControl={false}
       doubleClickZoom={props.doubleClickZoom}
     >
@@ -56,6 +96,7 @@ export function MapComponent(
       {props.parkingLots?.map((lot) => (
         <CustomMarker key={lot.id} lot={lot} />
       ))}
+      {userLocation && <UserLocationMarker position={userLocation} />}
     </MapContainer>
   );
 }
