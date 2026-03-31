@@ -138,6 +138,8 @@ export const usersVehiclePlate = {
 export type ParkingLot = {
   id: number;
   parking_lot_name: string;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
   updated_at: string;
   // 其他字段由后端决定
