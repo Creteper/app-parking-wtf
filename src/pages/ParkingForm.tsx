@@ -1,177 +1,232 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import { format } from "date-fns";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-    ArrowLeft,
-    ChevronDown,
-    Plus
-} from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-// 工具函数：合并Tailwind类名
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
-
-// 模拟下拉选择项数据
-const mockOptions = {
-    community: ['阳光花园', '丽景湾', '悦湖苑'],
-    region: ['A区', 'B区', 'C区', '地下一层'],
-    spotNo: ['A01', 'A02', 'B05', 'C12'],
-    spotType: ['产权车位', '租赁车位', '临时车位']
-};
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { api, type ParkingLot, type AxiosError } from "@/lib/api";
 
 const ParkingForm = () => {
-    const [formData, setFormData] = useState({
-        community: '',
-        region: '',
-        spotNo: '',
-        spotType: '',
-        userName: '',
-        phone: '',
-        licensePlate: '',
-        attachment: null as File | null
-    });
+  const navigate = useNavigate();
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const handleInputChange = (field: keyof typeof formData, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+  const [formData, setFormData] = useState({
+    parking_lot_id: "",
+    owner_phone: "",
+  });
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) setFormData(prev => ({ ...prev, attachment: file }));
-    };
+  const [arrivalTime, setArrivalTime] = useState<Date | undefined>();
+  const [leaveTime, setLeaveTime] = useState<Date | undefined>();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('提交表单:', formData);
-    };
+  // 获取停车场列表和车牌信息
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // 获取停车场列表
+        const lotsRes = await api.parkingLots.list({ pageSize: 100 });
+        setParkingLots(lotsRes.data.data || []);
 
-    return (
-        <div className="min-h-screen bg-gray-50 font-sans">
-            {/* 顶部导航栏 */}
-            <header className="bg-blue-500 text-white h-14 flex items-center justify-between px-4 shadow-md">
-                <button className="p-2 -ml-2 rounded-full hover:bg-blue-600 transition-colors">
-                    <ArrowLeft className="w-6 h-6" />
-                </button>
-                <h1 className="text-xl font-semibold">添加车位</h1>
-                <div className="w-10" />
-            </header>
+        // 获取用户车牌信息
+        const plateRes = await api.usersVehiclePlate.status();
+        if (plateRes.data.vehicle_plate) {
+          setVehiclePlate(plateRes.data.vehicle_plate);
+        }
+      } catch (err) {
+        console.error("数据获取失败:", err);
+      }
+    }
+    fetchData();
+  }, []);
 
-            {/* 表单主体 */}
-            <form onSubmit={handleSubmit} className="p-4 space-y-4 max-w-md mx-auto">
-                {/* 车位信息模块 */}
-                <div className="bg-white rounded-lg shadow-sm p-4">
-                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <span className="w-1 h-6 bg-blue-500 mr-2 rounded-full" />
-                        车位信息
-                    </h2>
-                    <div className="space-y-4">
-                        {[
-                            { label: '小区', key: 'community' as const, options: mockOptions.community },
-                            { label: '区域', key: 'region' as const, options: mockOptions.region },
-                            { label: '车位编号', key: 'spotNo' as const, options: mockOptions.spotNo },
-                            { label: '车位类型', key: 'spotType' as const, options: mockOptions.spotType }
-                        ].map((item) => (
-                            <div key={item.key} className="flex flex-col">
-                                <label className="text-gray-700 font-medium mb-1 flex">
-                                    {item.label} <span className="text-red-500 ml-1">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={formData[item.key]}
-                                        onChange={(e) => handleInputChange(item.key, e.target.value)}
-                                        className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
-                                        required
-                                    >
-                                        <option value="" disabled>请选择</option>
-                                        {item.options.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    // 验证日期时间是否已选择
+    if (!arrivalTime) {
+      setError("请选择到达时间");
+      return;
+    }
+    if (!leaveTime) {
+      setError("请选择离开时间");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 格式化日期时间为 ISO 字符串
+      await api.parkingRecords.create({
+        parking_lot_id: parseInt(formData.parking_lot_id),
+        arrival_time: format(arrivalTime, "yyyy-MM-dd'T'HH:mm:ss"),
+        leave_date: format(leaveTime, "yyyy-MM-dd'T'HH:mm:ss"),
+        owner_phone: formData.owner_phone,
+      });
+
+      // 提交成功后返回首页
+      navigate("/");
+    } catch (err) {
+      const axiosError = err as AxiosError;
+      const message = (axiosError.response?.data as any)?.message || "提交失败";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="w-full min-h-screen bg-muted px-8 pt-8 pb-8">
+      {/* 顶部导航栏 */}
+      <header className="flex items-center gap-2 mb-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/")}
+          className="rounded-full"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">停车预约</h1>
+      </header>
+
+      {/* 车辆信息展示 - 竖向排列 */}
+      <div className="space-y-3 mb-6">
+        {/* 车辆图片卡片 */}
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex justify-between">
+              <div>
+                <h2 className="text-lg font-bold">别克君威 28T</h2>
+                <p className="text-sm text-muted-foreground">
+                  2025款{" "}
+                  <span className="bg-linear-to-br from-blue-500 to-blue-600 px-2 py-0.5 rounded-md text-white text-xs">
+                    白色
+                  </span>
+                </p>
+              </div>
+              <div className="flex justify-start">
+                <div className="bg-linear-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg text-lg font-bold tracking-wider border-2 border-white shadow-lg">
+                  {vehiclePlate || "未绑定"}
                 </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="">
+            <img src="/images/car-photo.png" alt="车辆照片" className="" />
+          </CardContent>
+        </Card>
+      </div>
 
-                {/* 住户信息模块 */}
-                <div className="bg-white rounded-lg shadow-sm p-4">
-                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <span className="w-1 h-6 bg-blue-500 mr-2 rounded-full" />
-                        住户信息
-                    </h2>
-                    <div className="space-y-4">
-                        {[
-                            { label: '姓名', key: 'userName' as const, placeholder: '请输入内容', type: 'text' },
-                            { label: '手机号', key: 'phone' as const, placeholder: '请输入内容', type: 'tel' }
-                        ].map((item) => (
-                            <div key={item.key} className="flex flex-col">
-                                <label className="text-gray-700 font-medium mb-1 flex">
-                                    {item.label} <span className="text-red-500 ml-1">*</span>
-                                </label>
-                                <input
-                                    type={item.type}
-                                    value={formData[item.key]}
-                                    onChange={(e) => handleInputChange(item.key, e.target.value)}
-                                    placeholder={item.placeholder}
-                                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    required
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
+      {/* 预约表单 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>填写预约信息</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 停车场选择 */}
+            <div className="space-y-2">
+              <Label htmlFor="parking_lot">
+                选择停车场 <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.parking_lot_id}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, parking_lot_id: value })
+                }
+              >
+                <SelectTrigger id="parking_lot">
+                  <SelectValue placeholder="请选择停车场" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {parkingLots.map((lot) => (
+                    <SelectItem key={lot.id} value={lot.id.toString()}>
+                      {lot.parking_lot_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                {/* 车辆信息模块 */}
-                <div className="bg-white rounded-lg shadow-sm p-4">
-                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <span className="w-1 h-6 bg-blue-500 mr-2 rounded-full" />
-                        车辆信息(非必填)
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="flex flex-col">
-                            <label className="text-gray-700 font-medium mb-1">车牌号</label>
-                            <input
-                                type="text"
-                                value={formData.licensePlate}
-                                onChange={(e) => handleInputChange('licensePlate', e.target.value)}
-                                placeholder="请输入内容"
-                                className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
-                        </div>
+            {/* 到达时间 */}
+            <div className="space-y-2">
+              <Label htmlFor="arrival_time">
+                到达时间 <span className="text-red-500">*</span>
+              </Label>
+              <DateTimePicker
+                date={arrivalTime}
+                setDate={setArrivalTime}
+                placeholder="选择到达日期和时间"
+              />
+            </div>
 
-                        <div className="flex flex-col">
-                            <label className="text-gray-700 font-medium mb-1">上传证件照片</label>
-                            <label className="w-36 h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors">
-                                <Plus className="w-8 h-8 text-gray-400 mb-1" />
-                                <span className="text-sm text-gray-500">选择图片</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileChange}
-                                    className="hidden"
-                                />
-                            </label>
-                            {formData.attachment && (
-                                <p className="text-xs text-green-600 mt-1">
-                                    已选择: {formData.attachment.name}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            {/* 离开时间 */}
+            <div className="space-y-2">
+              <Label htmlFor="leave_date">
+                离开时间 <span className="text-red-500">*</span>
+              </Label>
+              <DateTimePicker
+                date={leaveTime}
+                setDate={setLeaveTime}
+                placeholder="选择离开日期和时间"
+              />
+            </div>
 
-                {/* 提交按钮 */}
-                <button
-                    type="submit"
-                    className="w-full h-12 bg-blue-500 text-white rounded-lg font-semibold text-lg hover:bg-blue-600 transition-colors shadow-sm"
-                >
-                    提交
-                </button>
-            </form>
-        </div>
-    );
+            {/* 车主手机号 */}
+            <div className="space-y-2">
+              <Label htmlFor="owner_phone">
+                车主手机号 <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="owner_phone"
+                type="tel"
+                placeholder="请输入手机号"
+                value={formData.owner_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, owner_phone: e.target.value })
+                }
+                required
+                maxLength={11}
+              />
+            </div>
+
+            {/* 错误提示 */}
+            {error && (
+              <div className="text-sm text-red-600 text-center">{error}</div>
+            )}
+
+            {/* 提交按钮 */}
+            <Button
+              type="submit"
+              className="w-full h-12 text-lg"
+              disabled={
+                loading ||
+                !formData.parking_lot_id ||
+                !arrivalTime ||
+                !leaveTime ||
+                !formData.owner_phone
+              }
+            >
+              {loading ? "提交中..." : "确认预约"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
+  );
 };
 
 export default ParkingForm;

@@ -1,15 +1,26 @@
 import { MapComponent } from "@/components/map.container";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, LogOut } from "lucide-react";
-import { api, type ParkingLot, getToken, clearToken } from "@/lib/api";
+import { Bell, Search, LogOut, Trash, ArrowRight } from "lucide-react";
+import {
+  api,
+  type ParkingLot,
+  getToken,
+  clearToken,
+  type ParkingRecord,
+} from "@/lib/api";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useRef } from "react";
+import BottomSheet, { type BottomSheetRef } from "@wldyslw/react-bottom-sheet";
+import { Card, CardContent, CardTitle } from "./components/ui/card";
+import dayjs from "dayjs";
 
 function App() {
   const navigate = useNavigate();
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
+  const sheetRef = useRef<BottomSheetRef>(null);
+  const [parkingRecords, setParkingRecords] = useState<ParkingRecord[]>([]);
   useEffect(() => {
     let cancelled = false;
 
@@ -51,6 +62,9 @@ function App() {
           page += 1;
         }
 
+        const res = await api.parkingRecords.list();
+        setParkingRecords(res.data?.data ?? []);
+
         if (!cancelled) {
           setParkingLots(items);
           setIsCheckingAuth(false);
@@ -84,7 +98,7 @@ function App() {
   }
 
   return (
-    <main className="w-full h-screen bg-muted overflow-auto px-8 pt-8">
+    <main className="w-full h-[calc(100vh-6.6rem)] bg-muted overflow-y-scroll px-8 pt-8 pb-4">
       <header
         data-slot="titlebar"
         className="flex items-center gap-2 justify-between"
@@ -132,6 +146,9 @@ function App() {
       >
         <MapComponent isTiles parkingLots={parkingLots} showUserLocation />
       </div>
+      <Button className="w-full mt-3 bg-linear-to-br from-blue-400 to-blue-600 rounded-xl h-12">
+        查看全部停车场
+      </Button>
       <div data-slot="card" className="w-full mt-3 grid grid-cols-2 gap-2">
         <div className="bg-white rounded-xl p-2 flex flex-col gap-2">
           <div className="flex flex-col gap-1">
@@ -159,9 +176,83 @@ function App() {
           </div>
         </div>
       </div>
-      <Button className="mt-3 w-full bg-linear-to-br from-primary to-accent rounded-xl h-12">
-        停车预约
-      </Button>
+
+      <div className="pt-4 flex flex-col gap-4">
+        <div className="bg-white rounded-xl p-4 flex items-center justify-between">
+          <h1 className="text-lg font-bold">预约记录</h1>
+          <Button variant={"link"} className="text-sm text-muted-foreground">
+            查看全部
+          </Button>
+        </div>
+        <div className="flex flex-col gap-4 select-none">
+          {parkingRecords ? (
+            parkingRecords.map((record) => (
+              <div
+                key={record.id}
+                className="gap-2 bg-white rounded-xl p-4 relative"
+              >
+                <div className=" flex flex-col gap-2">
+                  <h1 className="text-lg font-bold">
+                    {record.parking_lot_name}
+                  </h1>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary rounded-xl p-2 text-white">
+                      {dayjs(record.arrival_time).format("HH:MM")}
+                    </div>
+                    <span>-</span>
+                    <div className="bg-primary rounded-xl p-2 text-white">
+                      {dayjs(record.leave_date).format("HH:MM")}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {dayjs(record.arrival_time).format("YYYY-MM-DD")} -{" "}
+                    {dayjs(record.leave_date).format("YYYY-MM-DD")}{" "}
+                  </div>
+                </div>
+                <div className="bg-primary rounded-r-xl w-10 h-full p-2 text-white absolute right-0 bottom-0 top-0 flex items-center justify-center">
+                  <ArrowRight className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-sm text-muted-foreground text-center">
+              暂无预约记录
+            </div>
+          )}
+        </div>
+      </div>
+      <BottomSheet
+        className="px-3 shadow-2xl"
+        detents={["12%", "30%"]}
+        grabberVisible
+        largestUndimmedDetentIndex={2}
+        ref={sheetRef}
+        permanent
+      >
+        <div className="h-full w-full overflow-hidden flex flex-col gap-4">
+          <Button
+            onClick={() => navigate("/parkingForm")}
+            className="mt-3 w-full bg-linear-to-br from-primary to-accent rounded-xl h-12"
+          >
+            停车预约
+          </Button>
+          <Card>
+            <CardTitle className="flex items-center justify-between px-4">
+              <div className="flex items-center gap-2">
+                <img src="./images/tips.svg" className="h-8 w-8" />
+                <h1 className="text-xl font-bold">停车小贴士</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">更新于3小时前</p>
+            </CardTitle>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                工作日8：00 - 10：00，17：00 -
+                19：00为停车高峰，建议错峰出行或提前预约车位。
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </BottomSheet>
     </main>
   );
 }
