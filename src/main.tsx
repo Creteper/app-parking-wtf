@@ -7,7 +7,7 @@ import App from "./App.tsx";
 import ParkingForm from "./pages/ParkingForm.tsx";
 import Auth from "./pages/Auth.tsx";
 import BindVehiclePlate from "./pages/BindVehiclePlate.tsx";
-
+import ParkingsPage from "./pages/Parkings.tsx";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +25,10 @@ const router = createBrowserRouter([
   {
     path: "/parkingForm",
     element: <ParkingForm />,
+  },
+  {
+    path: "/parkings",
+    element: <ParkingsPage />,
   },
 ]);
 

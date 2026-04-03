@@ -258,3 +258,7 @@
 #bottom-sheet-container div[role="dialog"] {
   z-index: 999 !important;
 }
+
+#bottom-sheet-container {
+  z-index: 1000;
+}

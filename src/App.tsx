@@ -1,79 +1,55 @@
 import { MapComponent } from "@/components/map.container";
 import { Button } from "@/components/ui/button";
 import { Bell, Search, LogOut, Trash, ArrowRight } from "lucide-react";
-import {
-  api,
-  type ParkingLot,
-  getToken,
-  clearToken,
-  type ParkingRecord,
-} from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useRef } from "react";
 import BottomSheet, { type BottomSheetRef } from "@wldyslw/react-bottom-sheet";
 import { Card, CardContent, CardTitle } from "./components/ui/card";
 import dayjs from "dayjs";
+import {
+  useAuthStore,
+  useParkingLotsStore,
+  useParkingRecordsStore,
+} from "@/stores";
 
 function App() {
   const navigate = useNavigate();
-  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const sheetRef = useRef<BottomSheetRef>(null);
-  const [parkingRecords, setParkingRecords] = useState<ParkingRecord[]>([]);
+
+  // 使用 Zustand stores
+  const { isCheckingAuth, checkAuthAndVehicle, logout } = useAuthStore();
+  const { parkingLots, fetchParkingLots } = useParkingLotsStore();
+  const { parkingRecords, fetchParkingRecords } = useParkingRecordsStore();
+
   useEffect(() => {
     let cancelled = false;
 
     async function checkAuthAndFetchData() {
-      // 1. 检查是否登录
-      const token = getToken();
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
-
       try {
-        // 2. 检查车牌号绑定状态
-        const plateStatus = await api.usersVehiclePlate.status();
-        if (!plateStatus.data.bound) {
+        // 1. 检查认证和车辆绑定状态
+        const { isAuthenticated, isVehicleBound } =
+          await checkAuthAndVehicle();
+
+        if (cancelled) return;
+
+        if (!isAuthenticated) {
+          navigate("/auth");
+          return;
+        }
+
+        if (!isVehicleBound) {
           navigate("/bind-vehicle");
           return;
         }
 
-        // 3. 获取停车场数据
-        const pageSize = 100;
-        let page = 1;
-        const items: ParkingLot[] = [];
-
-        while (true) {
-          const res = await api.parkingLots.list({ page, pageSize });
-          const chunk = res.data?.data ?? [];
-          items.push(...chunk);
-
-          const totalPages = res.data?.pagination?.totalPages;
-          if (typeof totalPages === "number") {
-            if (page >= totalPages) break;
-            page += 1;
-            continue;
-          }
-
-          // 没有分页信息时，若本页数据不足 pageSize 认为已到末尾
-          if (chunk.length < pageSize) break;
-          page += 1;
-        }
-
-        const res = await api.parkingRecords.list();
-        setParkingRecords(res.data?.data ?? []);
-
-        if (!cancelled) {
-          setParkingLots(items);
-          setIsCheckingAuth(false);
-        }
+        // 2. 获取停车场数据和停车记录
+        await Promise.all([fetchParkingLots(), fetchParkingRecords()]);
       } catch (err) {
         console.error("Auth check or data fetch failed:", err);
-        // 如果API调用失败（如token无效），跳转到登录页
-        clearToken();
-        navigate("/auth");
+        if (!cancelled) {
+          navigate("/auth");
+        }
       }
     }
 
@@ -82,10 +58,10 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, checkAuthAndVehicle, fetchParkingLots, fetchParkingRecords]);
 
   const handleLogout = () => {
-    clearToken();
+    logout();
     navigate("/auth");
   };
 
@@ -146,8 +122,11 @@ function App() {
       >
         <MapComponent isTiles parkingLots={parkingLots} showUserLocation />
       </div>
-      <Button className="w-full mt-3 bg-linear-to-br from-blue-400 to-blue-600 rounded-xl h-12">
-        查看全部停车场
+      <Button
+        onClick={() => navigate("/parkings")}
+        className="w-full mt-3 bg-linear-to-br from-blue-400 to-blue-600 rounded-xl h-12"
+      >
+        前往停车场
       </Button>
       <div data-slot="card" className="w-full mt-3 grid grid-cols-2 gap-2">
         <div className="bg-white rounded-xl p-2 flex flex-col gap-2">

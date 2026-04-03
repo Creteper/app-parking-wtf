@@ -71,7 +71,7 @@
 
 ### 1) 停车场列表
 - `GET /api/parking-lots`
-- 需要鉴权
+- 不需要鉴权
 - query（可选）：
   - `parking_lot_name`：停车场名称模糊匹配
   - `page`：默认 `1`
@@ -79,24 +79,78 @@
 - 成功（200）：
 ```json
 {
-  "data": [ { "id": 1, "parking_lot_name": "...", "created_at": "...", "updated_at": "..." } ],
+  "data": [
+    {
+      "id": 1,
+      "parking_lot_name": "XX停车场",
+      "address": "北京市朝阳区XX路100号",
+      "pname": "XX停车场",
+      "cityname": "北京",
+      "adname": "朝阳区",
+      "km": 5.5,
+      "latitude": 39.9042,
+      "longitude": 116.4074,
+      "created_at": "2026-04-02T10:00:00",
+      "updated_at": "2026-04-02T10:00:00"
+    }
+  ],
   "pagination": { "total": 20, "page": 1, "pageSize": 10, "totalPages": 2 }
 }
 ```
+- 说明：返回字段不包含 `route`（路线数据量大，单独接口获取）
 
 ### 2) 停车场详情
 - `GET /api/parking-lots/:id`
-- 需要鉴权
-- 成功（200）：返回单条停车场记录
+- 不需要鉴权
+- 成功（200）：
+```json
+{
+  "id": 1,
+  "parking_lot_name": "XX停车场",
+  "address": "北京市朝阳区XX路100号",
+  "pname": "XX停车场",
+  "cityname": "北京",
+  "adname": "朝阳区",
+  "km": 5.5,
+  "latitude": 39.9042,
+  "longitude": 116.4074,
+  "created_at": "2026-04-02T10:00:00",
+  "updated_at": "2026-04-02T10:00:00"
+}
+```
 - 不存在（404）：`{ "message": "停车场不存在" }`
+- 说明：返回字段不包含 `route`（路线数据量大，单独接口获取）
 
-### 3) 新增停车场
+### 3) 获取停车场路线
+- `GET /api/parking-lots/:id/route`
+- 不需要鉴权
+- 成功（200）：
+```json
+{
+  "id": 1,
+  "parking_lot_name": "XX停车场",
+  "route": [
+    { "lat": 39.9, "lng": 116.4 },
+    { "lat": 39.91, "lng": 116.41 }
+  ]
+}
+```
+- 不存在（404）：`{ "message": "停车场不存在" }`
+- 说明：专用接口返回路线数据，`route` 字段为 JSON 格式
+
+### 4) 新增停车场
 - `POST /api/parking-lots`
 - 需要鉴权
 - body：
 ```json
 {
   "parking_lot_name": "XX停车场",
+  "address": "北京市朝阳区XX路100号",
+  "pname": "XX停车场",
+  "cityname": "北京",
+  "adname": "朝阳区",
+  "route": [{ "lat": 39.9, "lng": 116.4 }],
+  "km": 5.5,
   "latitude": 31.2304,
   "longitude": 121.4737
 }
@@ -105,16 +159,28 @@
 - 校验：
   - `parking_lot_name` 必填、非空字符串、长度 `<= 100`
   - 同名不允许（唯一键）
+  - `address` 可选：地址，最大长度 255
+  - `pname` 可选：停车场简称，最大长度 100
+  - `cityname` 可选：城市名称，最大长度 50
+  - `adname` 可选：区域名称，最大长度 50
+  - `route` 可选：路线 JSON（数组格式）
+  - `km` 可选：距离，非负数
   - `latitude` 可选：纬度范围 `-90` 到 `90`
   - `longitude` 可选：经度范围 `-180` 到 `180`
 
-### 4) 修改停车场
+### 5) 修改停车场
 - `PUT /api/parking-lots/:id`
 - 需要鉴权
-- body：
+- body（字段可选，但至少传一个）：
 ```json
 {
   "parking_lot_name": "XX停车场(新名)",
+  "address": "新地址",
+  "pname": "新简称",
+  "cityname": "新城市",
+  "adname": "新区域",
+  "route": [{ "lat": 39.9, "lng": 116.4 }],
+  "km": 10.5,
   "latitude": 31.2304,
   "longitude": 121.4737
 }
@@ -122,9 +188,14 @@
 - 成功（200）：`{ "message": "...", "data": { ... } }`
 - 不存在（404）
 - 同名冲突（400）：`{ "message": "该停车场名称已存在" }`
-  - `latitude`、`longitude` 为可选；如果不传则不更新
+- 校验：
+  - `parking_lot_name` 非空字符串、长度 `<= 100`
+  - `route` 必须是有效的 JSON 或 JSON 数组
+  - `km` 必须是有效数字
+  - `latitude` 范围 `-90` 到 `90`
+  - `longitude` 范围 `-180` 到 `180`
 
-### 5) 删除停车场
+### 6) 删除停车场
 - `DELETE /api/parking-lots/:id`
 - 需要鉴权
 - 行为：如果该停车场下存在 `parking_records`，会返回 400 并禁止删除
@@ -195,4 +266,44 @@
 - 需要鉴权
 - 成功（200）：`{ "message": "停车记录删除成功" }`
 - 若记录不存在或不属于当前用户（404）：`{ "message": "停车记录不存在或无权限" }`
+
+### 5) 获取未完成的预约记录
+- `GET /api/parking-records/unfinished`
+- 需要鉴权
+- 说明：获取当前用户未完成的预约记录，状态根据当前时间与预约离开时间动态判断
+- query（可选）：
+  - `parking_lot_id`：按停车场ID筛选
+  - `page`：默认 `1`
+  - `pageSize`：默认 `10`
+- 未绑定车牌号（400）：`{ "message": "未绑定车牌号" }`
+- 成功（200）：
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "parking_lot_id": 1,
+      "parking_lot_name": "XX停车场",
+      "arrival_time": "2026-04-02T10:00:00",
+      "leave_date": "2026-04-03",
+      "vehicle_plate": "粤B12345",
+      "owner_phone": "13800138000",
+      "status": "未完成",
+      "created_at": "2026-04-02T10:00:00",
+      "updated_at": "2026-04-02T10:00:00"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "page": 1,
+    "pageSize": 10,
+    "totalPages": 1
+  }
+}
+```
+- 状态说明：
+  - `status` 字段根据当前时间与 `leave_date` 动态判断
+  - 若当前时间 > `leave_date`，则状态为 `'已完成'`
+  - 否则状态为 `'未完成'`
+  - `leave_date` 为 `NULL` 时，状态始终为 `'未完成'`
 
