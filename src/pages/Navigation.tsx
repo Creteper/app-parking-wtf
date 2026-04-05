@@ -67,7 +67,7 @@ const speak = (text: string): void => {
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
 
-  window.speechSynthesis.speak(utterance);
+  // window.speechSynthesis.speak(utterance);
 };
 
 // action 图标映射
@@ -348,7 +348,7 @@ export default function NavigationPage() {
               <DialogClose asChild>
                 <Button variant={"ghost"} type="button" className="rounded-xl">取消</Button>
               </DialogClose>
-              <Button className="rounded-xl">确认到达</Button>
+              <Button onClick={() => navigate(`/joinParkNavigation/${parkingLotId}`)} className="rounded-xl">确认到达</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -10,6 +10,7 @@ import BindVehiclePlate from "./pages/BindVehiclePlate.tsx";
 import ParkingsPage from "./pages/Parkings.tsx";
 import NavigationPage from "./pages/Navigation.tsx";
 import ParkingRecordsPage from "./pages/ParkingRecords.tsx";
+import JoinParkNavigationPage from "./pages/JoinParkNavigation.tsx";
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,9 @@ const router = createBrowserRouter([
   {
     path: "/parkingRecords",
     element: <ParkingRecordsPage />,
+  },{
+    path: "/joinParkNavigation/:parkingLotId",
+    element: <JoinParkNavigationPage />,
   }
 ]);
 
