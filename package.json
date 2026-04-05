@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:start": "echo build Android apk && echo Smart Parking v1.0.1:%time% Release && timeout /t 5 /nobreak >nul && echo ✅ Andorid Apk Build Success && timeout /t 3 /nobreak >nul && echo Run visualPhone and open App && start App.exe && pnpm run start"
+    "build:start": "echo build Android apk && echo Smart Parking v1.0.1:%time% Release && timeout /t 5 /nobreak >nul && echo ✅ Andorid Apk Build Success && timeout /t 3 /nobreak >nul && echo Run visualPhone and open App && start App.exe && pnpm run dev"
   },
   "dependencies": {
     "@ant-design/x": "^2.5.0",
