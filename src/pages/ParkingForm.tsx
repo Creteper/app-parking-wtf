@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { api, type ParkingLot, type AxiosError } from "@/lib/api";
+import TitleBar from "@/components/title.bar";
 
 const ParkingForm = () => {
   const navigate = useNavigate();
@@ -90,17 +91,7 @@ const ParkingForm = () => {
   return (
     <main className="w-full min-h-screen bg-muted px-8 pt-8 pb-8">
       {/* 顶部导航栏 */}
-      <header className="flex items-center gap-2 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/")}
-          className="rounded-full"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <h1 className="text-2xl font-bold">停车预约</h1>
-      </header>
+      <TitleBar title="车位预约" />
 
       {/* 车辆信息展示 - 竖向排列 */}
       <div className="space-y-3 mb-6">

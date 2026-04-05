@@ -135,15 +135,80 @@ export const usersVehiclePlate = {
 };
 
 /* -------------------------- Parking Lots ------------------------- */
+export type RoutePoint = {
+  lat: number;
+  lng: number;
+};
+
 export type ParkingLot = {
   id: number;
   parking_lot_name: string;
+  address: string;
+  pname: string;
+  cityname: string;
+  adname: string;
+  km: number;
   latitude?: number;
   longitude?: number;
   created_at: string;
   updated_at: string;
   // 其他字段由后端决定
   [key: string]: unknown;
+};
+
+export type ParkingLotRouteResponse = {
+  id: number;
+  parking_lot_name: string;
+  route: RoutePoint[];
+};
+
+/* -------------------------- Navigation Route ------------------------- */
+// 步骤中的 TMC 交通信息
+export type TmcInfo = {
+  lcode: unknown[];
+  status: string;
+  distance: string;
+  polyline: string; // "lng,lat;lng,lat;..."
+};
+
+// 导航步骤
+export type NavigationStep = {
+  tmcs: TmcInfo[];
+  tolls: string;
+  action: string;
+  cities: {
+    name: string;
+    adcode: string;
+    citycode: string;
+    districts: { name: string; adcode: string }[];
+  }[];
+  distance: string;
+  duration: string;
+  polyline: string;
+  road?: string;
+  instruction: string;
+  orientation: string;
+  toll_road: unknown[];
+  assistant_action: unknown[];
+};
+
+// 路径
+export type NavigationPath = {
+  steps: NavigationStep[];
+};
+
+// 路线数据 - 可能是简单格式或复杂格式
+export type RouteData =
+  | RoutePoint[]                    // 简单格式: [{lat, lng}, ...]
+  | { paths: NavigationPath[] };    // 复杂格式: { paths: [...] }
+
+// 导航路线响应
+export type NavigationRouteResponse = {
+  id: number;
+  parking_lot_name: string;
+  info?: string;
+  count?: string;
+  route: RouteData | { route: RouteData }; // 处理嵌套的 route
 };
 
 export type ParkingLotsListQuery = {
@@ -164,19 +229,27 @@ export type ParkingLotsListResponse = {
   pagination: Pagination;
 };
 
-export type ParkingLotsGetResponse = {
-  // 文档说明为“单条停车场记录”，字段由后端决定
-  [key: string]: unknown;
-};
 
 export type CreateParkingLotBody = {
   parking_lot_name: string;
+  address?: string;
+  pname?: string;
+  cityname?: string;
+  adname?: string;
+  route?: RoutePoint[];
+  km?: number;
   latitude?: number;
   longitude?: number;
 };
 
 export type UpdateParkingLotBody = {
   parking_lot_name?: string;
+  address?: string;
+  pname?: string;
+  cityname?: string;
+  adname?: string;
+  route?: RoutePoint[];
+  km?: number;
   latitude?: number;
   longitude?: number;
 };
@@ -196,8 +269,8 @@ export const parkingLots = {
     );
   },
 
-  get(id: number): Promise<AxiosResponse<ParkingLotsGetResponse>> {
-    return axiosInstance.get<ParkingLotsGetResponse>(
+  get(id: number): Promise<AxiosResponse<ParkingLot>> {
+    return axiosInstance.get<ParkingLot>(
       `${API_PREFIX}/parking-lots/${id}`,
     );
   },
@@ -226,6 +299,12 @@ export const parkingLots = {
       `${API_PREFIX}/parking-lots/${id}`,
     );
   },
+
+  getRoute(id: number): Promise<AxiosResponse<NavigationRouteResponse>> {
+    return axiosInstance.get<NavigationRouteResponse>(
+      `${API_PREFIX}/parking-lots/${id}/route`,
+    );
+  },
 };
 
 /* ----------------------- Parking Records ------------------------ */
@@ -236,8 +315,36 @@ export type ParkingRecord = {
   arrival_time?: string;
   leave_date?: string;
   owner_phone?: string;
+  vehicle_plate?: string;
+  status?: "已完成" | "未完成";
+  created_at?: string;
+  updated_at?: string;
   // 其他字段由后端决定
   [key: string]: unknown;
+};
+
+export type UnfinishedParkingRecord = {
+  id: number;
+  parking_lot_id: number;
+  parking_lot_name: string;
+  arrival_time: string;
+  leave_date: string;
+  vehicle_plate: string;
+  owner_phone: string;
+  status: "已完成" | "未完成";
+  created_at: string;
+  updated_at: string;
+};
+
+export type UnfinishedParkingRecordsQuery = {
+  parking_lot_id?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export type UnfinishedParkingRecordsResponse = {
+  data: UnfinishedParkingRecord[];
+  pagination: Pagination;
 };
 
 export type ParkingRecordsListQuery = {
@@ -300,6 +407,15 @@ export const parkingRecords = {
   remove(id: number): Promise<AxiosResponse<ParkingLotMessageResponse>> {
     return axiosInstance.delete<ParkingLotMessageResponse>(
       `${API_PREFIX}/parking-records/${id}`,
+    );
+  },
+
+  unfinished(
+    params?: UnfinishedParkingRecordsQuery,
+  ): Promise<AxiosResponse<UnfinishedParkingRecordsResponse>> {
+    return axiosInstance.get<UnfinishedParkingRecordsResponse>(
+      `${API_PREFIX}/parking-records/unfinished`,
+      { params },
     );
   },
 };
