@@ -1,6 +1,6 @@
 import { MapComponent } from "@/components/map.container";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, LogOut, Trash, ArrowRight } from "lucide-react";
+import { Bell, Search, LogOut, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useRef } from "react";
