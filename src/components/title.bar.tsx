@@ -12,7 +12,7 @@ export interface TitleBarProps {
 export default function TitleBar({ title, className }: TitleBarProps) {
   const navigate = useNavigate();
   return (
-    <header className={cn("flex items-center gap-2 mb-6", className)}>
+    <header className={cn("flex items-center gap-2 mb-6 text-2xl ", className)}>
       <Button
         variant="ghost"
         size="icon"
@@ -21,7 +21,7 @@ export default function TitleBar({ title, className }: TitleBarProps) {
       >
         <ArrowLeft className="w-5 h-5" />
       </Button>
-      <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="font-bold">{title}</h1>
     </header>
   );
 }

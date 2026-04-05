@@ -159,7 +159,7 @@ function App() {
       <div className="pt-4 flex flex-col gap-4">
         <div className="bg-white rounded-xl p-4 flex items-center justify-between">
           <h1 className="text-lg font-bold">预约记录</h1>
-          <Button variant={"link"} className="text-sm text-muted-foreground">
+          <Button onClick={() => navigate("/parkingRecords")} variant={"link"} className="text-sm text-muted-foreground">
             查看全部
           </Button>
         </div>
