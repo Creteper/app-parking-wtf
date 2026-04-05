@@ -97,7 +97,7 @@
   --muted-foreground: oklch(0.5376 0.0159 248.1233);
   --accent: oklch(0.5733 0.2332 266.6428);
   --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.6581 0.1135 209.2513);
+  --destructive: oklch(0.64 0.21 25);
   --border: oklch(0.9277 0.0121 247.9576);
   --input: oklch(0.8271 0.0118 252.1059);
   --ring: oklch(0.5733 0.2332 266.6428);
@@ -115,7 +115,7 @@
   --sidebar-accent-foreground: oklch(0 0 0);
   --sidebar-border: oklch(0.9277 0.0121 247.9576);
   --sidebar-ring: oklch(0.5733 0.2332 266.6428);
-  --destructive-foreground: oklch(0 0 0);
+  --destructive-foreground: oklch(1 0 0);
   --surface: oklch(1 0 0);
   --surface-foreground: oklch(0.2424 0.0224 246.0556);
   --code: oklch(1 0 0);
@@ -261,4 +261,8 @@
 
 #bottom-sheet-container {
   z-index: 1000;
+}
+
+div[data-slot="dialog-overlay"] {
+  z-index: 1005;
 }

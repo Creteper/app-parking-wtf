@@ -6,7 +6,6 @@ import {
   Polyline,
   Polygon,
   useMap,
-  useMapEvents,
 } from "react-leaflet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -104,7 +103,9 @@ export interface PolygonData {
 // Map 控制方法接口
 export interface MapHandle {
   setCenter: (center: [number, number], zoom?: number) => void;
+  setZoom: (zoom: number) => void;
   addPath: (path: PathData) => void;
+  updatePath: (id: string, positions: [number, number][]) => void;
   removePath: (id: string) => void;
   clearPaths: () => void;
   addPolygon: (polygon: PolygonData) => void;
@@ -127,12 +128,8 @@ export interface MapComponentProps {
 // Map 控制组件
 function MapController({
   mapHandle,
-  paths,
-  polygons,
 }: {
   mapHandle: React.MutableRefObject<MapHandle>;
-  paths: PathData[];
-  polygons: PolygonData[];
 }) {
   const map = useMap();
 
@@ -146,7 +143,11 @@ function MapController({
           map.setView(center);
         }
       },
-      addPath: () => {}, // 由父组件状态管理
+      setZoom: (zoom: number) => {
+        map.setZoom(zoom);
+      },
+      addPath: () => {},
+      updatePath: () => {},
       removePath: () => {},
       clearPaths: () => {},
       addPolygon: () => {},
@@ -205,6 +206,20 @@ export const MapComponent = forwardRef<MapHandle, MapComponentProps>(
       }
     }, [props.showUserLocation, props.customUserLocation]);
 
+    // 响应 initialPaths 变化
+    useEffect(() => {
+      if (props.initialPaths && props.initialPaths.length > 0) {
+        setPaths(props.initialPaths);
+      }
+    }, [props.initialPaths]);
+
+    // 响应 initialPolygons 变化
+    useEffect(() => {
+      if (props.initialPolygons && props.initialPolygons.length > 0) {
+        setPolygons(props.initialPolygons);
+      }
+    }, [props.initialPolygons]);
+
     // 暴露方法给父组件
     useImperativeHandle(
       ref,
@@ -212,8 +227,16 @@ export const MapComponent = forwardRef<MapHandle, MapComponentProps>(
         setCenter: (center: [number, number], zoom?: number) => {
           mapHandleRef.current.setCenter(center, zoom);
         },
+        setZoom: (zoom: number) => {
+          mapHandleRef.current.setZoom(zoom);
+        },
         addPath: (path: PathData) => {
           setPaths((prev) => [...prev, path]);
+        },
+        updatePath: (id: string, positions: [number, number][]) => {
+          setPaths((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, positions } : p)),
+          );
         },
         removePath: (id: string) => {
           setPaths((prev) => prev.filter((p) => p.id !== id));
@@ -245,11 +268,7 @@ export const MapComponent = forwardRef<MapHandle, MapComponentProps>(
         zoomControl={false}
         doubleClickZoom={props.doubleClickZoom}
       >
-        <MapController
-          mapHandle={mapHandleRef}
-          paths={paths}
-          polygons={polygons}
-        />
+        <MapController mapHandle={mapHandleRef} />
         <TileLayer
           attribution="&copy; 智慧社区地图 ©2026"
           url={
@@ -273,8 +292,8 @@ export const MapComponent = forwardRef<MapHandle, MapComponentProps>(
             key={path.id}
             positions={path.positions}
             pathOptions={{
-              color: path.color ?? "#3388ff",
-              weight: path.weight ?? 3,
+              color: path.color ?? "#3B82F6",
+              weight: path.weight ?? 5,
             }}
           />
         ))}

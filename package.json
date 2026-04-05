@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/x": "^2.5.0",
+    "@ant-design/x-sdk": "^2.5.0",
     "@fontsource-variable/inter": "^5.2.8",
     "@tailwindcss/vite": "^4.2.2",
     "@wldyslw/react-bottom-sheet": "^0.4.0",

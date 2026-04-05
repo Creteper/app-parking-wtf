@@ -162,6 +162,55 @@ export type ParkingLotRouteResponse = {
   route: RoutePoint[];
 };
 
+/* -------------------------- Navigation Route ------------------------- */
+// 步骤中的 TMC 交通信息
+export type TmcInfo = {
+  lcode: unknown[];
+  status: string;
+  distance: string;
+  polyline: string; // "lng,lat;lng,lat;..."
+};
+
+// 导航步骤
+export type NavigationStep = {
+  tmcs: TmcInfo[];
+  tolls: string;
+  action: string;
+  cities: {
+    name: string;
+    adcode: string;
+    citycode: string;
+    districts: { name: string; adcode: string }[];
+  }[];
+  distance: string;
+  duration: string;
+  polyline: string;
+  road?: string;
+  instruction: string;
+  orientation: string;
+  toll_road: unknown[];
+  assistant_action: unknown[];
+};
+
+// 路径
+export type NavigationPath = {
+  steps: NavigationStep[];
+};
+
+// 路线数据 - 可能是简单格式或复杂格式
+export type RouteData =
+  | RoutePoint[]                    // 简单格式: [{lat, lng}, ...]
+  | { paths: NavigationPath[] };    // 复杂格式: { paths: [...] }
+
+// 导航路线响应
+export type NavigationRouteResponse = {
+  id: number;
+  parking_lot_name: string;
+  info?: string;
+  count?: string;
+  route: RouteData | { route: RouteData }; // 处理嵌套的 route
+};
+
 export type ParkingLotsListQuery = {
   parking_lot_name?: string;
   page?: number;
@@ -180,10 +229,6 @@ export type ParkingLotsListResponse = {
   pagination: Pagination;
 };
 
-export type ParkingLotsGetResponse = {
-  // 文档说明为“单条停车场记录”，字段由后端决定
-  [key: string]: unknown;
-};
 
 export type CreateParkingLotBody = {
   parking_lot_name: string;
@@ -224,8 +269,8 @@ export const parkingLots = {
     );
   },
 
-  get(id: number): Promise<AxiosResponse<ParkingLotsGetResponse>> {
-    return axiosInstance.get<ParkingLotsGetResponse>(
+  get(id: number): Promise<AxiosResponse<ParkingLot>> {
+    return axiosInstance.get<ParkingLot>(
       `${API_PREFIX}/parking-lots/${id}`,
     );
   },
@@ -255,8 +300,8 @@ export const parkingLots = {
     );
   },
 
-  getRoute(id: number): Promise<AxiosResponse<ParkingLotRouteResponse>> {
-    return axiosInstance.get<ParkingLotRouteResponse>(
+  getRoute(id: number): Promise<AxiosResponse<NavigationRouteResponse>> {
+    return axiosInstance.get<NavigationRouteResponse>(
       `${API_PREFIX}/parking-lots/${id}/route`,
     );
   },
