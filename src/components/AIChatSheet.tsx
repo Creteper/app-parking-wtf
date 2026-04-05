@@ -5,7 +5,6 @@ import BottomSheet, { type BottomSheetRef } from "@wldyslw/react-bottom-sheet";
 import {
   streamChatOllama,
   type OllamaMessage,
-  type OllamaStreamChunk,
 } from "@/lib/ollama";
 import { type ParkingLot, type UnfinishedParkingRecord } from "@/lib/api";
 
